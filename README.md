@@ -84,6 +84,12 @@ This recreates:
 - model comparison and neural-network tuning outputs in `artifacts/data/`
 - report payloads in `artifacts/reports/`
 
+## Deployed Streamlit App in Community Cloud
+
+Current deployed app URL:
+
+- [https://plane-crash-data.streamlit.app](https://plane-crash-data.streamlit.app)
+
 ## Streamlit app behavior
 
 - The app loads saved artifacts and does not retrain models on startup.
@@ -93,10 +99,4 @@ This recreates:
   - a heatmap of validation F1
   - a small table showing the best tuning configuration
 - The `Explainability & Interactive Prediction` tab supports live prediction. If the user selects the MLP model for prediction, the app uses the saved PyTorch MLP artifact.
-
-## Deployed Streamlit App in Community Cloud
-
-Current deployed app URL:
-
-- [https://plane-crash-data.streamlit.app](https://plane-crash-data.streamlit.app)
 
