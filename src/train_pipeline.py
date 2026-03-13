@@ -1028,7 +1028,7 @@ def build_report_payload(
         "model_summary": {
             "best_model_paragraph": (
                 f"{best_overall.model_name} delivered the best F1 score on the held-out test set, which suggests it captured the nonlinear relationships in the crash context better than the simpler baseline models. "
-                "The main trade-off is interpretability: Logistic Regression and the Decision Tree are easier to explain quickly, but the ensemble methods produced stronger predictive performance."
+                "The main trade-off is interpretability: Logistic Regression and the Decision Tree are easier to explain quickly, while the tuned neural network produced the strongest predictive performance overall and LightGBM remained the strongest tree-based option for explainability."
             )
         },
         "shap_summary": {

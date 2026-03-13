@@ -211,21 +211,33 @@ if mlp_tuning_table is not None:
         "Explore the precomputed PyTorch MLP grid search over hidden sizes, learning rates, and dropout rates."
     )
 
-    hidden_options = mlp_tuning_table["hidden_layer_sizes"].drop_duplicates().tolist()
-    lr_options = sorted(mlp_tuning_table["learning_rate"].drop_duplicates().tolist())
-    dropout_options = sorted(mlp_tuning_table["dropout"].drop_duplicates().tolist())
+    hidden_pairs = [ast.literal_eval(value) for value in mlp_tuning_table["hidden_layer_sizes"].drop_duplicates().tolist()]
+    hidden_1_values = sorted({pair[0] for pair in hidden_pairs})
+    hidden_2_values = sorted({pair[1] for pair in hidden_pairs})
+    lr_min = float(mlp_tuning_table["learning_rate"].min())
+    lr_max = float(mlp_tuning_table["learning_rate"].max())
+    dropout_min = float(mlp_tuning_table["dropout"].min())
+    dropout_max = float(mlp_tuning_table["dropout"].max())
 
-    selected_hidden = st.sidebar.selectbox("Hidden layers", hidden_options)
-    selected_lr = st.sidebar.selectbox("Learning rate", lr_options)
-    selected_dropout = st.sidebar.selectbox("Dropout", dropout_options)
+    selected_hidden_1 = st.sidebar.slider("Hidden layer 1", min_value=min(hidden_1_values), max_value=max(hidden_1_values), value=min(hidden_1_values), step=1)
+    selected_hidden_2 = st.sidebar.slider("Hidden layer 2", min_value=min(hidden_2_values), max_value=max(hidden_2_values), value=min(hidden_2_values), step=1)
+    selected_lr = st.sidebar.slider("Learning rate", min_value=lr_min, max_value=lr_max, value=lr_min, step=0.0005, format="%.4f")
+    selected_dropout = st.sidebar.slider("Dropout", min_value=dropout_min, max_value=dropout_max, value=dropout_min, step=0.05, format="%.2f")
 
-    selected_row = mlp_tuning_table[
-        (mlp_tuning_table["hidden_layer_sizes"] == selected_hidden)
-        & (mlp_tuning_table["learning_rate"] == selected_lr)
-        & (mlp_tuning_table["dropout"] == selected_dropout)
-    ].iloc[0]
+    mlp_tuning_table = mlp_tuning_table.copy()
+    mlp_tuning_table["hidden_1"] = mlp_tuning_table["hidden_layer_sizes"].map(lambda value: ast.literal_eval(value)[0])
+    mlp_tuning_table["hidden_2"] = mlp_tuning_table["hidden_layer_sizes"].map(lambda value: ast.literal_eval(value)[1])
+    mlp_tuning_table["distance"] = (
+        (mlp_tuning_table["hidden_1"] - selected_hidden_1).abs()
+        + (mlp_tuning_table["hidden_2"] - selected_hidden_2).abs()
+        + ((mlp_tuning_table["learning_rate"] - selected_lr).abs() / 0.0005)
+        + ((mlp_tuning_table["dropout"] - selected_dropout).abs() / 0.05)
+    )
+    selected_row = mlp_tuning_table.sort_values(["distance", "val_f1"], ascending=[True, False]).iloc[0]
 
     best_row = mlp_tuning_table.sort_values("val_f1", ascending=False).iloc[0]
+    available_dropouts = sorted(mlp_tuning_table["dropout"].drop_duplicates().tolist())
+    heatmap_dropout = min(available_dropouts, key=lambda value: abs(value - selected_dropout))
 
     st.sidebar.metric("Validation F1", f"{selected_row['val_f1']:.3f}")
     st.sidebar.metric("Validation Accuracy", f"{selected_row['val_accuracy']:.3f}")
@@ -244,7 +256,7 @@ if mlp_tuning_table is not None:
     )
     st.sidebar.dataframe(best_config_table, use_container_width=True, hide_index=True)
 
-    heatmap_df = mlp_tuning_table[mlp_tuning_table["dropout"] == selected_dropout].copy()
+    heatmap_df = mlp_tuning_table[mlp_tuning_table["dropout"] == heatmap_dropout].copy()
     heatmap_df["learning_rate"] = heatmap_df["learning_rate"].astype(str)
     heatmap_pivot = heatmap_df.pivot(
         index="hidden_layer_sizes",
@@ -253,7 +265,7 @@ if mlp_tuning_table is not None:
     )
     fig, ax = plt.subplots(figsize=(3.8, 2.8))
     sns.heatmap(heatmap_pivot, annot=True, fmt=".3f", cmap="YlOrRd", cbar=False, ax=ax)
-    ax.set_title(f"Validation F1 at dropout={selected_dropout}")
+    ax.set_title(f"Validation F1 at nearest dropout={heatmap_dropout}")
     ax.set_xlabel("Learning rate")
     ax.set_ylabel("Hidden layers")
     st.sidebar.pyplot(fig, clear_figure=True)
