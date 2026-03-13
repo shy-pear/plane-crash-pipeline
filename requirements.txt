@@ -7,3 +7,4 @@ streamlit==1.54.0
 shap==0.50.0
 lightgbm==4.6.0
 joblib==1.5.3
+torch==2.10.0
