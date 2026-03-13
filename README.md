@@ -94,45 +94,9 @@ This recreates:
   - a small table showing the best tuning configuration
 - The `Explainability & Interactive Prediction` tab supports live prediction. If the user selects the MLP model for prediction, the app uses the saved PyTorch MLP artifact.
 
-## Deploying to Streamlit Community Cloud
-
-1. Push this project to GitHub.
-2. Go to [Streamlit Community Cloud](https://share.streamlit.io/).
-3. Click **New app**.
-4. Select your repository and branch.
-5. Set the main file path to `app.py`.
-6. Deploy.
+## Deployed Streamlit App in Community Cloud
 
 Current deployed app URL:
 
 - [https://plane-crash-data.streamlit.app](https://plane-crash-data.streamlit.app)
 
-After deployment:
-
-- open the public app URL
-- click through all four tabs
-- test the sidebar neural-network tuning controls
-- test interactive prediction
-- check the app in an incognito window
-
-## Notes for submission
-
-Make sure your GitHub repo contains:
-
-- `app.py`
-- `src/train_pipeline.py`
-- `requirements.txt`
-- `README.md`
-- `Plane Crashes.csv`
-- `artifacts/`
-
-For Canvas, submit:
-
-- your GitHub repository link
-- your deployed Streamlit app link
-
-## Suggested final polish
-
-- Read through the executive summary and make sure it sounds like your own voice.
-- Double-check the deployed app after every push.
-- If you regenerate artifacts, commit and push those updated files before redeploying.
