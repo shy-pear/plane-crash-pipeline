@@ -2,6 +2,8 @@
 
 This project uses the historical `Plane Crashes.csv` dataset to predict whether a crash had at least one survivor. The repository includes descriptive analytics, predictive modeling, neural-network tuning, SHAP explainability, saved model artifacts, and a Streamlit app that presents the full workflow in four tabs.
 
+Deployed app: [https://plane-crash-data.streamlit.app](https://plane-crash-data.streamlit.app)
+
 ## Project structure
 
 - `src/train_pipeline.py`: builds the full pipeline, generates plots, tunes models, runs SHAP, and saves artifacts.
@@ -46,6 +48,8 @@ The app uses LightGBM for SHAP because it is the strongest tree-based model, whi
 
 ## How to run locally
 
+If you only want to open the app with the saved artifacts already in the repo, you do not need to retrain first. Install dependencies and run Streamlit.
+
 ### 1. Create and activate a virtual environment
 
 ```bash
@@ -59,7 +63,13 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3. Regenerate all artifacts
+### 3. Launch the Streamlit app
+
+```bash
+streamlit run app.py
+```
+
+### 4. Optional: regenerate all artifacts
 
 Use unbuffered Python so training progress prints in real time:
 
@@ -73,12 +83,6 @@ This recreates:
 - all saved models in `artifacts/models/`
 - model comparison and neural-network tuning outputs in `artifacts/data/`
 - report payloads in `artifacts/reports/`
-
-### 4. Launch the Streamlit app
-
-```bash
-streamlit run app.py
-```
 
 ## Streamlit app behavior
 
@@ -98,6 +102,10 @@ streamlit run app.py
 4. Select your repository and branch.
 5. Set the main file path to `app.py`.
 6. Deploy.
+
+Current deployed app URL:
+
+- [https://plane-crash-data.streamlit.app](https://plane-crash-data.streamlit.app)
 
 After deployment:
 
