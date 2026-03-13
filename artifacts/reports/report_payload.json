@@ -10,12 +10,12 @@
   "executive_summary": {
     "dataset_description": "This project uses 27,239 historical airplane crash records from the `Plane Crashes.csv` dataset. Each row represents one crash event and includes operational context such as flight phase, flight type, crash site, region, likely cause, aircraft family, and how many crew and passengers were on board. The prediction target is whether the crash had at least one survivor, turning the dataset into a binary classification problem that stakeholders can understand immediately.",
     "why_it_matters": "Although survival after an air crash is an extreme and tragic outcome, the broader analytics question is meaningful: which operating conditions and crash contexts are associated with any chance of survival? A model like this can help safety analysts identify patterns tied to survivability, communicate risk more clearly, and prioritize deeper investigation into the conditions that appear most dangerous.",
-    "approach_findings": "I engineered a leakage-safe feature set by excluding direct fatality counts and instead modeling survivability from contextual signals such as occupancy, aircraft age, flight phase, crash site, region, and crash cause. I then compared Logistic Regression, Decision Tree, Random Forest, LightGBM, and an MLP neural network with a fixed random seed and a held-out 30 percent test set. The strongest test-set F1 score came from MLP Neural Network at 0.764, with ROC-AUC of 0.789. For explainability, I used LightGBM because it was the best-performing tree-based model and supports a detailed SHAP analysis."
+    "approach_findings": "I engineered a leakage-safe feature set by excluding direct fatality counts and instead modeling survivability from contextual signals such as occupancy, aircraft age, flight phase, crash site, region, and crash cause. I then compared Logistic Regression, Decision Tree, Random Forest, LightGBM, and an MLP neural network with a fixed random seed and a held-out 30 percent test set. The strongest test-set F1 score came from MLP Neural Network at 0.765, with ROC-AUC of 0.785. For explainability, I used LightGBM because it was the best-performing tree-based model and supports a detailed SHAP analysis."
   },
   "plot_captions": {
     "target_distribution": "The target is reasonably balanced: 15,528 crashes had at least one survivor, while 11,711 had none. That balance means F1 and ROC-AUC are still more informative than accuracy alone, but we do not face an extreme class-imbalance problem.",
-    "occupancy_vs_survival": "Crashes with no survivors tend to involve more people on board, with a median of 4.0 versus 4.0 when at least one person survives. This does not prove causality, but it suggests that higher-occupancy events may be harder to escape or may correlate with more severe crash contexts.",
-    "survival_by_cause": "Different crash-cause categories show noticeably different survival patterns. The most common high-survival category in this top slice is Human factor, where roughly 51.6% of records still had at least one survivor, highlighting how cause classification may capture meaningful differences in crash severity.",
+    "occupancy_vs_survival": "The median occupancy is the same in both groups at 4.0 people on board, so the boxplot does not support a clean median split between crashes with and without survivors. What it does show is a slightly higher upper tail for crashes with at least one survivor, which suggests the relationship between occupancy and survivability is more nuanced than a simple 'more people means worse outcomes' story.",
+    "survival_by_cause": "Different crash-cause categories show noticeably different survival patterns, with categories like Technical failure in this top slice showing a higher observed survival rate than Human factor or Weather. Human factor is the most common cause category overall in the plot at 9868 records, but its survival rate is only about 51.6%, which shows that frequency and survivability are not the same thing.",
     "phase_site_heatmap": "Survival rates vary meaningfully when flight phase and crash site are considered together rather than in isolation. This kind of interaction view is useful because it shows that the same phase can have very different outcomes depending on whether the crash happened near an airport, over water, or in a more remote setting.",
     "survival_by_region": "Regional differences appear in the historical data, although they likely reflect a mix of reporting practices, aircraft usage patterns, and geography rather than a simple regional effect. In this subset, Africa shows one of the highest observed survival rates among the busiest regions in the dataset.",
     "correlation_heatmap": "The strongest numeric correlation in the engineered feature set is between pax_on_board and total_on_board at 0.91. This matters for modeling because highly related occupancy variables can reinforce similar signals, especially for linear models."
@@ -95,20 +95,20 @@
     },
     {
       "model_name": "MLP Neural Network",
-      "accuracy": 0.7206314243759178,
-      "precision": 0.737220447284345,
-      "recall": 0.7924447306288903,
-      "f1": 0.7638357298024206,
-      "roc_auc": 0.7886320743967138,
+      "accuracy": 0.7194077337249143,
+      "precision": 0.7315068493150685,
+      "recall": 0.8023180940115905,
+      "f1": 0.765277919950865,
+      "roc_auc": 0.7854849925157636,
       "best_params": {
         "hidden_layer_sizes": [
-          64,
-          64
+          32,
+          32
         ],
         "activation": "relu",
         "optimizer": "adam",
         "learning_rate": 0.001,
-        "dropout": 0.2,
+        "dropout": 0.3,
         "epochs": 20,
         "batch_size": 512
       },

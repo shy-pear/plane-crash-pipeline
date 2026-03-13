@@ -12,6 +12,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 import shap
 import streamlit as st
 try:
@@ -54,6 +55,14 @@ def load_input_config() -> dict[str, Any]:
 @st.cache_data
 def load_model_table() -> pd.DataFrame:
     return pd.read_csv(DATA / "model_comparison.csv")
+
+
+@st.cache_data
+def load_mlp_tuning_table() -> pd.DataFrame | None:
+    path = DATA / "mlp_tuning_results.csv"
+    if not path.exists():
+        return None
+    return pd.read_csv(path)
 
 
 @st.cache_resource
@@ -192,7 +201,62 @@ payload = load_report_payload()
 metadata = load_metadata()
 input_config = load_input_config()
 model_table = load_model_table().sort_values("f1", ascending=False)
+mlp_tuning_table = load_mlp_tuning_table()
 model_bundles = load_model_bundles()
+
+
+if mlp_tuning_table is not None:
+    st.sidebar.header("NN Tuning Bonus")
+    st.sidebar.write(
+        "Explore the precomputed PyTorch MLP grid search over hidden sizes, learning rates, and dropout rates."
+    )
+
+    hidden_options = mlp_tuning_table["hidden_layer_sizes"].drop_duplicates().tolist()
+    lr_options = sorted(mlp_tuning_table["learning_rate"].drop_duplicates().tolist())
+    dropout_options = sorted(mlp_tuning_table["dropout"].drop_duplicates().tolist())
+
+    selected_hidden = st.sidebar.selectbox("Hidden layers", hidden_options)
+    selected_lr = st.sidebar.selectbox("Learning rate", lr_options)
+    selected_dropout = st.sidebar.selectbox("Dropout", dropout_options)
+
+    selected_row = mlp_tuning_table[
+        (mlp_tuning_table["hidden_layer_sizes"] == selected_hidden)
+        & (mlp_tuning_table["learning_rate"] == selected_lr)
+        & (mlp_tuning_table["dropout"] == selected_dropout)
+    ].iloc[0]
+
+    best_row = mlp_tuning_table.sort_values("val_f1", ascending=False).iloc[0]
+
+    st.sidebar.metric("Validation F1", f"{selected_row['val_f1']:.3f}")
+    st.sidebar.metric("Validation Accuracy", f"{selected_row['val_accuracy']:.3f}")
+    st.sidebar.metric("Final Loss", f"{selected_row['final_loss']:.3f}")
+
+    st.sidebar.write("Best configuration")
+    best_config_table = pd.DataFrame(
+        [
+            {
+                "hidden_layers": best_row["hidden_layer_sizes"],
+                "learning_rate": best_row["learning_rate"],
+                "dropout": best_row["dropout"],
+                "val_f1": round(float(best_row["val_f1"]), 3),
+            }
+        ]
+    )
+    st.sidebar.dataframe(best_config_table, use_container_width=True, hide_index=True)
+
+    heatmap_df = mlp_tuning_table[mlp_tuning_table["dropout"] == selected_dropout].copy()
+    heatmap_df["learning_rate"] = heatmap_df["learning_rate"].astype(str)
+    heatmap_pivot = heatmap_df.pivot(
+        index="hidden_layer_sizes",
+        columns="learning_rate",
+        values="val_f1",
+    )
+    fig, ax = plt.subplots(figsize=(3.8, 2.8))
+    sns.heatmap(heatmap_pivot, annot=True, fmt=".3f", cmap="YlOrRd", cbar=False, ax=ax)
+    ax.set_title(f"Validation F1 at dropout={selected_dropout}")
+    ax.set_xlabel("Learning rate")
+    ax.set_ylabel("Hidden layers")
+    st.sidebar.pyplot(fig, clear_figure=True)
 
 
 st.title("End-to-End Data Science Workflow: Plane Crash Survivability")

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import inspect
 import json
 import math
@@ -572,45 +573,28 @@ class TorchMLP(nn.Module):
         return self.network(x)
 
 
-def train_torch_mlp(
-    preprocessor: ColumnTransformer,
-    X_train: pd.DataFrame,
-    y_train: pd.Series,
-    X_test: pd.DataFrame,
-    y_test: pd.Series,
-) -> tuple[ModelResult, np.ndarray]:
-    X_train_sub, X_val, y_train_sub, y_val = train_test_split(
-        X_train,
-        y_train,
-        test_size=0.2,
-        stratify=y_train,
-        random_state=RANDOM_STATE,
-    )
-
-    fitted_preprocessor = clone(preprocessor)
-    X_train_proc = np.asarray(fitted_preprocessor.fit_transform(X_train_sub), dtype=np.float32)
-    X_val_proc = np.asarray(fitted_preprocessor.transform(X_val), dtype=np.float32)
-    X_test_proc = np.asarray(fitted_preprocessor.transform(X_test), dtype=np.float32)
-
-    y_train_np = y_train_sub.to_numpy(dtype=np.float32).reshape(-1, 1)
-    y_val_np = y_val.to_numpy(dtype=np.float32)
-
+def fit_torch_mlp(
+    X_train_proc: np.ndarray,
+    y_train_np: np.ndarray,
+    X_val_proc: np.ndarray,
+    y_val: pd.Series,
+    hidden_sizes: tuple[int, int],
+    dropout: float,
+    learning_rate: float,
+    epochs: int,
+    batch_size: int,
+    verbose: bool = False,
+) -> tuple[Any, pd.DataFrame]:
     torch.manual_seed(RANDOM_STATE)
     torch.set_num_threads(1)
-    input_dim = X_train_proc.shape[1]
-    hidden_sizes = (64, 64)
-    dropout = 0.2
-    learning_rate = 0.001
-    epochs = 20
-    batch_size = 512
 
-    model = TorchMLP(input_dim=input_dim, hidden_sizes=hidden_sizes, dropout=dropout)
+    model = TorchMLP(input_dim=X_train_proc.shape[1], hidden_sizes=hidden_sizes, dropout=dropout)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     criterion = nn.BCEWithLogitsLoss()
+
     X_train_tensor = torch.from_numpy(X_train_proc)
     y_train_tensor = torch.from_numpy(y_train_np)
     X_val_tensor = torch.from_numpy(X_val_proc)
-    X_test_tensor = torch.from_numpy(X_test_proc)
 
     history_rows: list[dict[str, float]] = []
     for epoch in range(1, epochs + 1):
@@ -641,13 +625,149 @@ def train_torch_mlp(
                 "val_f1": float(f1_score(y_val, val_pred, zero_division=0)),
             }
         )
-        if epoch == 1 or epoch % 5 == 0 or epoch == epochs:
+        if verbose and (epoch == 1 or epoch % 5 == 0 or epoch == epochs):
             print(
                 f"PyTorch MLP epoch {epoch}/{epochs} "
                 f"- loss={history_rows[-1]['loss']:.4f} "
                 f"- val_f1={history_rows[-1]['val_f1']:.4f}",
                 flush=True,
             )
+
+    return model, pd.DataFrame(history_rows)
+
+
+def tune_torch_mlp(
+    X_train_proc: np.ndarray,
+    y_train_np: np.ndarray,
+    X_val_proc: np.ndarray,
+    y_val: pd.Series,
+) -> dict[str, Any]:
+    hidden_options = [(32, 32), (64, 64)]
+    learning_rates = [0.001, 0.0005]
+    dropouts = [0.1, 0.3]
+    epochs = 8
+    batch_size = 512
+
+    tuning_rows: list[dict[str, Any]] = []
+    best_model = None
+    best_history = None
+    best_config = None
+    best_val_f1 = -1.0
+
+    for hidden_sizes in hidden_options:
+        for learning_rate in learning_rates:
+            for dropout in dropouts:
+                model, history_df = fit_torch_mlp(
+                    X_train_proc=X_train_proc,
+                    y_train_np=y_train_np,
+                    X_val_proc=X_val_proc,
+                    y_val=y_val,
+                    hidden_sizes=hidden_sizes,
+                    dropout=dropout,
+                    learning_rate=learning_rate,
+                    epochs=epochs,
+                    batch_size=batch_size,
+                    verbose=False,
+                )
+                final_row = history_df.iloc[-1]
+                config_row = {
+                    "hidden_layer_sizes": str(list(hidden_sizes)),
+                    "learning_rate": learning_rate,
+                    "dropout": dropout,
+                    "epochs": epochs,
+                    "batch_size": batch_size,
+                    "val_accuracy": float(final_row["val_accuracy"]),
+                    "val_f1": float(final_row["val_f1"]),
+                    "final_loss": float(final_row["loss"]),
+                }
+                tuning_rows.append(config_row)
+                print(
+                    "Bonus tuning "
+                    f"hidden={list(hidden_sizes)} lr={learning_rate} dropout={dropout} "
+                    f"-> val_f1={config_row['val_f1']:.4f}",
+                    flush=True,
+                )
+                if config_row["val_f1"] > best_val_f1:
+                    best_val_f1 = config_row["val_f1"]
+                    best_model = model
+                    best_history = history_df
+                    best_config = config_row
+
+    tuning_df = pd.DataFrame(tuning_rows).sort_values("val_f1", ascending=False)
+    tuning_df.to_csv(DATA_DIR / "mlp_tuning_results.csv", index=False)
+
+    plot_df = tuning_df.copy()
+    plot_df["config_label"] = (
+        plot_df["hidden_layer_sizes"]
+        + " | lr="
+        + plot_df["learning_rate"].astype(str)
+        + " | d="
+        + plot_df["dropout"].astype(str)
+    )
+    fig, ax = plt.subplots(figsize=(10, 5))
+    sns.barplot(data=plot_df, x="config_label", y="val_f1", hue="config_label", palette="rocket", legend=False, ax=ax)
+    ax.set_title("Neural Network Hyperparameter Tuning Results")
+    ax.set_xlabel("")
+    ax.set_ylabel("Validation F1")
+    ax.tick_params(axis="x", rotation=35)
+    plot_and_save(fig, PLOTS_DIR / "mlp_tuning_results.png")
+
+    return {
+        "best_model": best_model,
+        "best_history": best_history,
+        "best_config": best_config,
+    }
+
+
+def train_torch_mlp(
+    preprocessor: ColumnTransformer,
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+    X_test: pd.DataFrame,
+    y_test: pd.Series,
+) -> tuple[ModelResult, np.ndarray]:
+    X_train_sub, X_val, y_train_sub, y_val = train_test_split(
+        X_train,
+        y_train,
+        test_size=0.2,
+        stratify=y_train,
+        random_state=RANDOM_STATE,
+    )
+
+    fitted_preprocessor = clone(preprocessor)
+    X_train_proc = np.asarray(fitted_preprocessor.fit_transform(X_train_sub), dtype=np.float32)
+    X_val_proc = np.asarray(fitted_preprocessor.transform(X_val), dtype=np.float32)
+    X_test_proc = np.asarray(fitted_preprocessor.transform(X_test), dtype=np.float32)
+
+    y_train_np = y_train_sub.to_numpy(dtype=np.float32).reshape(-1, 1)
+    tuning_payload = tune_torch_mlp(
+        X_train_proc=X_train_proc,
+        y_train_np=y_train_np,
+        X_val_proc=X_val_proc,
+        y_val=y_val,
+    )
+    best_config = tuning_payload["best_config"]
+
+    input_dim = X_train_proc.shape[1]
+    hidden_sizes = tuple(ast.literal_eval(best_config["hidden_layer_sizes"]))
+    dropout = float(best_config["dropout"])
+    learning_rate = float(best_config["learning_rate"])
+    epochs = 20
+    batch_size = 512
+
+    model, history_df = fit_torch_mlp(
+        X_train_proc=X_train_proc,
+        y_train_np=y_train_np,
+        X_val_proc=X_val_proc,
+        y_val=y_val,
+        hidden_sizes=hidden_sizes,
+        dropout=dropout,
+        learning_rate=learning_rate,
+        epochs=epochs,
+        batch_size=batch_size,
+        verbose=True,
+    )
+    X_test_tensor = torch.from_numpy(X_test_proc)
 
     model.eval()
     with torch.no_grad():
@@ -656,7 +776,6 @@ def train_torch_mlp(
     y_pred = (y_prob >= 0.5).astype(int)
     metrics = compute_metrics(y_test.to_numpy(), y_pred, y_prob)
 
-    history_df = pd.DataFrame(history_rows)
     history_path = DATA_DIR / "mlp_training_history.csv"
     history_df.to_csv(history_path, index=False)
 
@@ -886,12 +1005,12 @@ def build_report_payload(
                 f"{target_summary['class_counts']['No survivors']:,} had none. That balance means F1 and ROC-AUC are still more informative than accuracy alone, but we do not face an extreme class-imbalance problem."
             ),
             "occupancy_vs_survival": (
-                f"Crashes with no survivors tend to involve more people on board, with a median of {descriptive_summary['median_total_on_board_no_survivors']:.1f} versus "
-                f"{descriptive_summary['median_total_on_board_with_survivors']:.1f} when at least one person survives. This does not prove causality, but it suggests that higher-occupancy events may be harder to escape or may correlate with more severe crash contexts."
+                f"The median occupancy is the same in both groups at {descriptive_summary['median_total_on_board_no_survivors']:.1f} people on board, so the boxplot does not support a clean median split between crashes with and without survivors. "
+                "What it does show is a slightly higher upper tail for crashes with at least one survivor, which suggests the relationship between occupancy and survivability is more nuanced than a simple 'more people means worse outcomes' story."
             ),
             "survival_by_cause": (
-                f"Different crash-cause categories show noticeably different survival patterns. The most common high-survival category in this top slice is {top_cause['Crash cause']}, "
-                f"where roughly {top_cause['survival_rate']:.1%} of records still had at least one survivor, highlighting how cause classification may capture meaningful differences in crash severity."
+                f"Different crash-cause categories show noticeably different survival patterns, with categories like Technical failure in this top slice showing a higher observed survival rate than Human factor or Weather. "
+                f"Human factor is the most common cause category overall in the plot at {top_cause['crashes']:.0f} records, but its survival rate is only about {top_cause['survival_rate']:.1%}, which shows that frequency and survivability are not the same thing."
             ),
             "phase_site_heatmap": (
                 "Survival rates vary meaningfully when flight phase and crash site are considered together rather than in isolation. "
