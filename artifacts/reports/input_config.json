@@ -1,0 +1,175 @@
+{
+  "year": {
+    "kind": "numeric",
+    "default": 1968.0,
+    "min": 1930.0,
+    "max": 2012.0
+  },
+  "month": {
+    "kind": "numeric",
+    "default": 7.0,
+    "min": 1.0,
+    "max": 12.0
+  },
+  "quarter": {
+    "kind": "numeric",
+    "default": 3.0,
+    "min": 1.0,
+    "max": 4.0
+  },
+  "crew_on_board": {
+    "kind": "numeric",
+    "default": 2.0,
+    "min": 0.0,
+    "max": 9.0
+  },
+  "pax_on_board": {
+    "kind": "numeric",
+    "default": 0.0,
+    "min": 0.0,
+    "max": 41.0
+  },
+  "total_on_board": {
+    "kind": "numeric",
+    "default": 4.0,
+    "min": 0.0,
+    "max": 46.0
+  },
+  "crew_share": {
+    "kind": "numeric",
+    "default": 1.0,
+    "min": 0.09090909090909091,
+    "max": 1.0
+  },
+  "aircraft_age": {
+    "kind": "numeric",
+    "default": 10.0,
+    "min": 0.0,
+    "max": 38.0
+  },
+  "Flight phase": {
+    "kind": "categorical",
+    "default": "Flight",
+    "options": [
+      "Flight",
+      "Landing (descent or approach)",
+      "Takeoff (climb)",
+      "Taxiing",
+      "Unknown",
+      "Parking"
+    ]
+  },
+  "Flight type": {
+    "kind": "categorical",
+    "default": "Scheduled Revenue Flight",
+    "options": [
+      "Scheduled Revenue Flight",
+      "Military",
+      "Training",
+      "Cargo",
+      "Private",
+      "Charter/Taxi (Non Scheduled Revenue Flight)",
+      "Executive/Corporate/Business",
+      "Survey / Patrol / Reconnaissance",
+      "Bombing",
+      "Positioning"
+    ]
+  },
+  "Crash site": {
+    "kind": "categorical",
+    "default": "Airport (less than 10 km from airport)",
+    "options": [
+      "Airport (less than 10 km from airport)",
+      "Plain, Valley",
+      "Lake, Sea, Ocean, River",
+      "Mountains",
+      "City",
+      "Desert",
+      "Unknown"
+    ]
+  },
+  "Region": {
+    "kind": "categorical",
+    "default": "North America",
+    "options": [
+      "North America",
+      "Europe",
+      "Asia",
+      "South America",
+      "Africa",
+      "Oceania",
+      "Central America",
+      "World",
+      "Antarctica",
+      "Unknown"
+    ]
+  },
+  "Crash cause": {
+    "kind": "categorical",
+    "default": "Human factor",
+    "options": [
+      "Human factor",
+      "Unknown",
+      "Technical failure",
+      "Weather",
+      "Terrorism act, Hijacking, Sabotage",
+      "Other causes"
+    ]
+  },
+  "day_of_week": {
+    "kind": "categorical",
+    "default": "Friday",
+    "options": [
+      "Friday",
+      "Thursday",
+      "Wednesday",
+      "Tuesday",
+      "Monday",
+      "Saturday",
+      "Sunday"
+    ]
+  },
+  "country_group": {
+    "kind": "categorical",
+    "default": "Other",
+    "options": [
+      "Other",
+      "United States of America",
+      "United Kingdom",
+      "Russia",
+      "Canada",
+      "France",
+      "Brazil",
+      "Australia",
+      "World",
+      "Germany"
+    ]
+  },
+  "operator_category": {
+    "kind": "categorical",
+    "default": "Other",
+    "options": [
+      "Other",
+      "Military",
+      "Commercial",
+      "Charter",
+      "Cargo"
+    ]
+  },
+  "aircraft_family": {
+    "kind": "categorical",
+    "default": "Other",
+    "options": [
+      "Other",
+      "De Havilland",
+      "Douglas C-47",
+      "PZL-Mielec AN-2",
+      "Curtiss C-46",
+      "Avro 652",
+      "Douglas DC-3",
+      "Lockheed C-130",
+      "Britten-Norman Islander",
+      "Piper PA-31-310"
+    ]
+  }
+}

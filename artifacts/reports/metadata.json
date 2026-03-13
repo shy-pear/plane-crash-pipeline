@@ -1,0 +1,83 @@
+{
+  "random_state": 42,
+  "selected_features": [
+    "year",
+    "month",
+    "quarter",
+    "crew_on_board",
+    "pax_on_board",
+    "total_on_board",
+    "crew_share",
+    "aircraft_age",
+    "Flight phase",
+    "Flight type",
+    "Crash site",
+    "Region",
+    "Crash cause",
+    "day_of_week",
+    "country_group",
+    "operator_category",
+    "aircraft_family"
+  ],
+  "numeric_features": [
+    "year",
+    "month",
+    "quarter",
+    "crew_on_board",
+    "pax_on_board",
+    "total_on_board",
+    "crew_share",
+    "aircraft_age"
+  ],
+  "categorical_features": [
+    "Flight phase",
+    "Flight type",
+    "Crash site",
+    "Region",
+    "Crash cause",
+    "day_of_week",
+    "country_group",
+    "operator_category",
+    "aircraft_family"
+  ],
+  "train_rows": 19067,
+  "test_rows": 8172,
+  "best_overall_model": "MLP Neural Network",
+  "best_tree_model": "LightGBM",
+  "target_distribution": {
+    "class_counts": {
+      "At least one survivor": 15528,
+      "No survivors": 11711
+    },
+    "survival_rate": 0.5700649803590441
+  },
+  "shap_summary": {
+    "best_tree_model": "LightGBM",
+    "top_shap_features": [
+      "numeric__total_on_board",
+      "categorical__Flight phase_Flight",
+      "categorical__Crash cause_Technical failure",
+      "categorical__Crash site_Airport (less than 10 km from airport)",
+      "numeric__year",
+      "numeric__aircraft_age",
+      "categorical__Crash site_Mountains",
+      "numeric__crew_share",
+      "categorical__Flight phase_Landing (descent or approach)",
+      "categorical__Flight type_Scheduled Revenue Flight"
+    ],
+    "top_shap_values": [
+      1.0480086891635596,
+      0.2793408766509808,
+      0.2690438255298169,
+      0.2618728280128046,
+      0.261412391065464,
+      0.17083812073479185,
+      0.16410285101759714,
+      0.10940217369498115,
+      0.10015889633062963,
+      0.07383672465264211
+    ],
+    "shap_support_path": "artifacts/models/shap_support.joblib"
+  },
+  "mlp_note": "PyTorch MLP with two hidden layers, ReLU activations, dropout regularization, and Adam optimization."
+}

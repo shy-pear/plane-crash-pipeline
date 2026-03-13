@@ -1,0 +1,8 @@
+__pycache__/
+.DS_Store
+.mplconfig/
+.streamlit/secrets.toml
+.venv/
+venv/
+test_plot.png
+train.log

@@ -1,0 +1,121 @@
+{
+  "dataset_summary": {
+    "rows": 27239,
+    "modeling_features": 17,
+    "numeric_features": 8,
+    "categorical_features": 9,
+    "target_name": "Survivors",
+    "target_positive_label": "At least one survivor"
+  },
+  "executive_summary": {
+    "dataset_description": "This project uses 27,239 historical airplane crash records from the `Plane Crashes.csv` dataset. Each row represents one crash event and includes operational context such as flight phase, flight type, crash site, region, likely cause, aircraft family, and how many crew and passengers were on board. The prediction target is whether the crash had at least one survivor, turning the dataset into a binary classification problem that stakeholders can understand immediately.",
+    "why_it_matters": "Although survival after an air crash is an extreme and tragic outcome, the broader analytics question is meaningful: which operating conditions and crash contexts are associated with any chance of survival? A model like this can help safety analysts identify patterns tied to survivability, communicate risk more clearly, and prioritize deeper investigation into the conditions that appear most dangerous.",
+    "approach_findings": "I engineered a leakage-safe feature set by excluding direct fatality counts and instead modeling survivability from contextual signals such as occupancy, aircraft age, flight phase, crash site, region, and crash cause. I then compared Logistic Regression, Decision Tree, Random Forest, LightGBM, and an MLP neural network with a fixed random seed and a held-out 30 percent test set. The strongest test-set F1 score came from MLP Neural Network at 0.764, with ROC-AUC of 0.789. For explainability, I used LightGBM because it was the best-performing tree-based model and supports a detailed SHAP analysis."
+  },
+  "plot_captions": {
+    "target_distribution": "The target is reasonably balanced: 15,528 crashes had at least one survivor, while 11,711 had none. That balance means F1 and ROC-AUC are still more informative than accuracy alone, but we do not face an extreme class-imbalance problem.",
+    "occupancy_vs_survival": "Crashes with no survivors tend to involve more people on board, with a median of 4.0 versus 4.0 when at least one person survives. This does not prove causality, but it suggests that higher-occupancy events may be harder to escape or may correlate with more severe crash contexts.",
+    "survival_by_cause": "Different crash-cause categories show noticeably different survival patterns. The most common high-survival category in this top slice is Human factor, where roughly 51.6% of records still had at least one survivor, highlighting how cause classification may capture meaningful differences in crash severity.",
+    "phase_site_heatmap": "Survival rates vary meaningfully when flight phase and crash site are considered together rather than in isolation. This kind of interaction view is useful because it shows that the same phase can have very different outcomes depending on whether the crash happened near an airport, over water, or in a more remote setting.",
+    "survival_by_region": "Regional differences appear in the historical data, although they likely reflect a mix of reporting practices, aircraft usage patterns, and geography rather than a simple regional effect. In this subset, Africa shows one of the highest observed survival rates among the busiest regions in the dataset.",
+    "correlation_heatmap": "The strongest numeric correlation in the engineered feature set is between pax_on_board and total_on_board at 0.91. This matters for modeling because highly related occupancy variables can reinforce similar signals, especially for linear models."
+  },
+  "model_summary": {
+    "best_model_paragraph": "MLP Neural Network delivered the best F1 score on the held-out test set, which suggests it captured the nonlinear relationships in the crash context better than the simpler baseline models. The main trade-off is interpretability: Logistic Regression and the Decision Tree are easier to explain quickly, but the ensemble methods produced stronger predictive performance."
+  },
+  "shap_summary": {
+    "interpretation": "The SHAP analysis shows that the most influential features in LightGBM are numeric__total_on_board, categorical__Flight phase_Flight, categorical__Crash cause_Technical failure, categorical__Crash site_Airport (less than 10 km from airport), numeric__year. Positive and negative SHAP values reveal not just which variables matter, but which directions of those variables move a prediction toward or away from survivability. For a decision-maker, this is useful because it turns the model from a black box into a ranked explanation of the conditions most associated with survival."
+  },
+  "model_results": [
+    {
+      "model_name": "Logistic Regression",
+      "accuracy": 0.6945668135095447,
+      "precision": 0.7473130573976675,
+      "recall": 0.7014380768405237,
+      "f1": 0.7236492471213464,
+      "roc_auc": 0.7645074710087031,
+      "best_params": {
+        "class_weight": "balanced",
+        "max_iter": 2000
+      },
+      "model_path": "artifacts/models/logistic_regression.joblib",
+      "roc_path": "artifacts/plots/roc_logistic_regression.png",
+      "training_history_path": null,
+      "notes": null
+    },
+    {
+      "model_name": "Decision Tree",
+      "accuracy": 0.6921194322075379,
+      "precision": 0.7121362106513561,
+      "recall": 0.7720540888602705,
+      "f1": 0.7408856848609681,
+      "roc_auc": 0.729432768864452,
+      "best_params": {
+        "model__max_depth": 3,
+        "model__min_samples_leaf": 10
+      },
+      "model_path": "artifacts/models/decision_tree.joblib",
+      "roc_path": "artifacts/plots/roc_decision_tree.png",
+      "training_history_path": null,
+      "notes": null
+    },
+    {
+      "model_name": "Random Forest",
+      "accuracy": 0.709618208516887,
+      "precision": 0.7630004601932812,
+      "recall": 0.7117407168920369,
+      "f1": 0.7364797334813992,
+      "roc_auc": 0.7914306210147487,
+      "best_params": {
+        "model__max_depth": 8,
+        "model__n_estimators": 200
+      },
+      "model_path": "artifacts/models/random_forest.joblib",
+      "roc_path": "artifacts/plots/roc_random_forest.png",
+      "training_history_path": null,
+      "notes": null
+    },
+    {
+      "model_name": "LightGBM",
+      "accuracy": 0.7304209495839452,
+      "precision": 0.7795992714025501,
+      "recall": 0.7349216570079417,
+      "f1": 0.7566014804993924,
+      "roc_auc": 0.8132041922966404,
+      "best_params": {
+        "model__learning_rate": 0.1,
+        "model__max_depth": 6,
+        "model__min_child_samples": 20,
+        "model__n_estimators": 200
+      },
+      "model_path": "artifacts/models/lightgbm.joblib",
+      "roc_path": "artifacts/plots/roc_lightgbm.png",
+      "training_history_path": null,
+      "notes": null
+    },
+    {
+      "model_name": "MLP Neural Network",
+      "accuracy": 0.7206314243759178,
+      "precision": 0.737220447284345,
+      "recall": 0.7924447306288903,
+      "f1": 0.7638357298024206,
+      "roc_auc": 0.7886320743967138,
+      "best_params": {
+        "hidden_layer_sizes": [
+          64,
+          64
+        ],
+        "activation": "relu",
+        "optimizer": "adam",
+        "learning_rate": 0.001,
+        "dropout": 0.2,
+        "epochs": 20,
+        "batch_size": 512
+      },
+      "model_path": "artifacts/models/mlp_classifier.joblib",
+      "roc_path": "artifacts/plots/roc_mlp_neural_network.png",
+      "training_history_path": "artifacts/plots/mlp_training_history.png",
+      "notes": "PyTorch MLP with two hidden layers, ReLU activations, dropout regularization, and Adam optimization."
+    }
+  ]
+}
